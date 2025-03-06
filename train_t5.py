@@ -179,7 +179,7 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
     
     # Compute additional metrics (F1, EM, SQL error rate)
     record_f1, record_em, sql_em, error_rate = compute_metrics(
-        all_predictions, all_targets, gt_sql_pth, model_sql_path, gt_record_path, model_record_path
+        gt_sql_pth, model_sql_path, gt_record_path, model_record_path
     )
     
     return avg_loss, record_f1, record_em, sql_em, error_rate
