@@ -46,8 +46,8 @@ def get_args():
                         help="How should we name this experiment?")
 
     # Data hyperparameters
-    parser.add_argument('--batch_size', type=int, default=8)
-    parser.add_argument('--test_batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--test_batch_size', type=int, default=16)
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/test10")
 
     args = parser.parse_args()
