@@ -27,7 +27,7 @@ def get_args():
     # Training hyperparameters
     parser.add_argument('--optimizer_type', type=str, default="AdamW", choices=["AdamW"],
                         help="What optimizer to use")
-    parser.add_argument('--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--learning_rate', type=float, default=5e-4)
     parser.add_argument('--weight_decay', type=float, default=0)
 
     parser.add_argument('--scheduler_type', type=str, default="cosine", choices=["none", "cosine", "linear"],
@@ -45,8 +45,9 @@ def get_args():
                         help="How should we name this experiment?")
 
     # Data hyperparameters
-    parser.add_argument('--batch_size', type=int, default=128)
-    parser.add_argument('--test_batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--test_batch_size', type=int, default=16)
+    parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/test5")
 
     args = parser.parse_args()
     return args
@@ -60,7 +61,7 @@ def train(args, model, train_loader, dev_loader, optimizer, scheduler):
     model_type = 'ft' if args.finetune else 'scr'
     checkpoint_dir = os.path.join('checkpoints', f'{model_type}_experiments', args.experiment_name)
     gt_sql_path = os.path.join(f'data/dev.sql')
-    gt_record_path = os.path.join(f'records/dev_gt_records.pkl')
+    gt_record_path = os.path.join(f'records/ground_truth_dev.pkl')
     model_sql_path = os.path.join(f'results/t5_{model_type}_{experiment_name}_dev.sql')
     model_record_path = os.path.join(f'records/t5_{model_type}_{experiment_name}_dev.pkl')
     for epoch in range(args.max_n_epochs):
@@ -130,15 +131,7 @@ def train_epoch(args, model, train_loader, optimizer, scheduler):
 
     return total_loss / total_tokens
   
-'''
-    You must implement the evaluation loop to be using during training. We recommend keeping track
-    of the model loss on the SQL queries, the metrics compute_metrics returns (save_queries_and_records should be helpful)
-    and the model's syntax error rate. 
-
-    To compute non-loss metrics, you will need to perform generation with the model. Greedy decoding or beam search
-    should both provide good results. If you find that this component of evaluation takes too long with your compute,
-    we found the cross-entropy loss (in the evaluation set) to be well (albeit imperfectly) correlated with F1 performance.
-    '''      
+ 
 def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_path, model_record_path):
     '''
     Evaluation loop during training. Computes:
@@ -161,16 +154,12 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
     model.eval()
     total_loss = 0
     total_tokens = 0
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
     generated_queries = []
-    
-    max_batches = 50
+
 
     with torch.no_grad():
-        for i, (encoder_input, encoder_mask, decoder_input, decoder_targets, _) in enumerate(tqdm(dev_loader)):
-            
-            if i >= max_batches:
-                break
+        for encoder_input, encoder_mask, decoder_input, decoder_targets, _ in tqdm(dev_loader):
             
             encoder_input = encoder_input.to(DEVICE)
             encoder_mask = encoder_mask.to(DEVICE)
@@ -185,7 +174,8 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
             )['logits']
 
             non_pad = decoder_targets != PAD_IDX
-            loss = criterion(logits[non_pad], decoder_targets[non_pad])
+            loss = criterion(logits.view(-1, logits.size(-1)), decoder_targets.view(-1))
+
 
             with torch.no_grad():
                 num_tokens = torch.sum(non_pad).item()
@@ -196,7 +186,9 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
             generation_config = GenerationConfig(
                 max_length=128,  # Adjust based on your expected max query length
                 num_return_sequences=1,
-                do_sample=False  # Use greedy decoding
+                do_sample=False,  # Use greedy decoding
+                repetition_penalty=1.1,
+                no_repeat_ngram_size=2
             )
             generated_seq = model.generate(
                 input_ids=encoder_input,
@@ -240,9 +232,7 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
     model.eval()
     generated_queries = []
 
-    # Disable gradient computation during inference
     with torch.no_grad():
-        # Iterate through test loader
         for encoder_input, encoder_mask, initial_decoder_inputs in tqdm(test_loader, desc="Test Inference"):
             # Move inputs to the correct device
             encoder_input = encoder_input.to(DEVICE)

@@ -68,7 +68,7 @@ def save_queries_and_records(sql_queries: List[str], sql_path: str, record_path:
         * record_path (str): Path to save database records associated with queries
     '''
     # First save the queries
-    with open(sql_path, 'w') as f:
+    with open(sql_path, 'w', encoding='utf-8') as f:
         for query in sql_queries:
             f.write(f'{query}\n')
 

@@ -26,11 +26,15 @@ class T5Dataset(Dataset):
               T5Tokenizer should serve that purpose.
             * Class behavior should be different on the test set.
         '''
-        # TODO
-        self.tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small')
-        self.split = split
-        self.data = self.process_data(data_folder, split, self.tokenizer)
+        # TODo
+        self.tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small', additional_special_tokens=["SELECT", "FROM", "WHERE", "AND", "OR", "JOIN", "ORDER BY", "GROUP BY", ";", "="])
+        self.tokenizer.save_pretrained("./custom_sql_tokenizer")
+        self.tokenizer = T5TokenizerFast.from_pretrained("./custom_sql_tokenizer")
 
+        self.split = split
+        self.pad_token_id = self.tokenizer.pad_token_id
+        self.data = self.process_data(data_folder, split, self.tokenizer)
+        
     def process_data(self, data_folder, split, tokenizer):
         # TODO
         train_x, train_y, dev_x, dev_y, test_x = load_prompting_data(data_folder)
@@ -187,6 +191,10 @@ def load_prompting_data(data_folder):
     dev_x_path = os.path.join(data_folder, 'dev.nl')
     dev_y_path = os.path.join(data_folder, 'dev.sql')
     test_x_path = os.path.join(data_folder, 'test.nl')
+    
+    
+    print("Example Training Input:", train_x[0])
+    print("Example Training SQL:", train_y[0])
     
     # Load data using the existing load_lines function
     train_x = load_lines(train_x_path)
