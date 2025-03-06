@@ -12,8 +12,6 @@ from transformers import T5TokenizerFast
 
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-SQL_SPECIAL_TOKENS = ["SELECT", "FROM", "WHERE", "AND", "OR", "JOIN", "ORDER BY", "GROUP BY"]
-
 
 def setup_wandb(args):
     # Implement this if you wish to use wandb in your experiments
@@ -27,16 +25,16 @@ def initialize_model(args):
     from scratch.
     '''
 
-    tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small', additional_special_tokens=SQL_SPECIAL_TOKENS)
-    tokenizer.save_pretrained("./custom_t5_tokenizer")
-    
+    tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small')
+
     if args.finetune:
         model = T5ForConditionalGeneration.from_pretrained('google-t5/t5-small')
     else:
         model = T5ForConditionalGeneration(T5Config.from_pretrained('google-t5/t5-small'))
     
-    model.tokenizer = T5TokenizerFast.from_pretrained("./custom_t5_tokenizer")
+    model.tokenizer = tokenizer
     model.to(DEVICE)
+
     return model
 
 def mkdir(dirpath):

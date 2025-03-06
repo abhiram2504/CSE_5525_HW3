@@ -16,79 +16,88 @@ PAD_IDX = 0
 class T5Dataset(Dataset):
 
     def __init__(self, data_folder, split):
-        '''
-        Skeleton for the class for performing data processing for the T5 model.
-
-        Some tips for implementation:
-            * You should be using the 'google-t5/t5-small' tokenizer checkpoint to tokenize both
-              the encoder and decoder output. 
-            * You want to provide the decoder some beginning of sentence token. Any extra-id on the
-              T5Tokenizer should serve that purpose.
-            * Class behavior should be different on the test set.
-        '''
-        # TODo
-        self.tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small', additional_special_tokens=["SELECT", "FROM", "WHERE", "AND", "OR", "JOIN", "ORDER BY", "GROUP BY", ";", "="])
-        self.tokenizer.save_pretrained("./custom_sql_tokenizer")
-        self.tokenizer = T5TokenizerFast.from_pretrained("./custom_sql_tokenizer")
-
+    
+        self.tokenizer = T5TokenizerFast.from_pretrained('google-t5/t5-small')
         self.split = split
         self.pad_token_id = self.tokenizer.pad_token_id
         self.data = self.process_data(data_folder, split, self.tokenizer)
         
     def process_data(self, data_folder, split, tokenizer):
-        # TODO
-        train_x, train_y, dev_x, dev_y, test_x = load_prompting_data(data_folder)
-        if split == 'train':
-            inputs, targets = train_x, train_y
-        elif split == 'dev':
-            inputs, targets = dev_x, dev_y
-        elif split == 'test':
-            inputs, targets = test_x, [None] * len(test_x)
-        else:
-            raise ValueError(f"Invalid split: {split}")
-        
-        processed_data = [] 
-        for i, (input_text, target_text) in enumerate(zip(inputs, targets)):
-            # Tokenize input text
-            input_ids = tokenizer.encode(
-                input_text, 
-                max_length=512, 
-                truncation=True, 
-                return_tensors='pt'
-            ).squeeze()
-            
-            # If not test split, process target text
-            if split != 'test':
-                # Add extra_id_0 as a prefix for decoder input
-                target_prefix = tokenizer.encode("extra_id_0", add_special_tokens=False)[0]
-                
-                # Tokenize target text
-                target_ids = tokenizer.encode(
-                    target_text, 
-                    max_length=512, 
-                    truncation=True, 
-                    return_tensors='pt'
-                ).squeeze()
-                
-                # Prepare decoder inputs and targets
-                decoder_input_ids = torch.cat([
-                    torch.tensor([target_prefix]), 
-                    target_ids[:-1]  # All but last token for decoder input
-                ])
-                decoder_target_ids = target_ids  # Full target sequence for loss computation
-                
-                processed_data.append({
-                    'input_ids': input_ids,
-                    'decoder_input_ids': decoder_input_ids,
-                    'decoder_target_ids': decoder_target_ids
-                })
-            else:
-                # For test split, only store input ids
-                processed_data.append({
-                    'input_ids': input_ids
-                })
-        
-        return processed_data
+
+      train_x, train_y, dev_x, dev_y, test_x = load_prompting_data(data_folder)
+      if split == 'train':
+          inputs, targets = train_x, train_y
+      elif split == 'dev':
+          inputs, targets = dev_x, dev_y
+      elif split == 'test':
+          inputs, targets = test_x, [None] * len(test_x)
+      else:
+          raise ValueError(f"Invalid split: {split}")
+      
+      processed_data = [] 
+      for i, (input_text, target_text) in enumerate(zip(inputs, targets)):
+          
+          input_text = self._normalize_nl_query(input_text)
+
+          # Tokenize input text
+          input_ids = tokenizer.encode(
+              input_text, 
+              max_length=512, 
+              truncation=True, 
+              return_tensors='pt'
+          ).squeeze()
+          
+          # If not test split, process target text
+          if split != 'test' and target_text is not None:
+
+              target_text = self._normalize_sql(target_text)
+
+              # Tokenize target text
+              target_ids = tokenizer.encode(
+                  target_text, 
+                  max_length=512, 
+                  truncation=True, 
+                  return_tensors='pt'
+              ).squeeze()
+              
+              # For T5, proper way to handle decoder input is to shift the target
+              decoder_input_ids = target_ids.clone()
+              decoder_input_ids = torch.cat([
+                  # Use a specific token to start decoding - extra_id_0 works for T5
+                  torch.tensor([tokenizer.pad_token_id]), 
+                  target_ids[:-1]  # All but last token for decoder input
+              ])
+              
+              processed_data.append({
+                  'input_ids': input_ids,
+                  'decoder_input_ids': decoder_input_ids,
+                  'decoder_target_ids': target_ids  # Full target sequence
+              })
+          else:
+              # For test split, only store input ids
+              processed_data.append({
+                  'input_ids': input_ids
+              })
+    
+      return processed_data
+    
+    def _normalize_nl_query(self, query):
+      # Convert to lowercase
+      query = query.lower()
+      # Replace multiple spaces with single space
+      query = re.sub(r'\s+', ' ', query).strip()
+      return query
+
+    def _normalize_sql(self, sql):
+      """Normalize SQL query to make training more consistent"""
+      # Standardize casing for SQL keywords
+      for keyword in ["SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "JOIN", "ON", "AND", "OR"]:
+          pattern = re.compile(re.escape(keyword), re.IGNORECASE)
+          sql = pattern.sub(keyword, sql)
+    
+      # Normalize whitespace
+      sql = re.sub(r'\s+', ' ', sql).strip()
+      return sql
         
     def __len__(self):
         # TODO
@@ -191,10 +200,7 @@ def load_prompting_data(data_folder):
     dev_x_path = os.path.join(data_folder, 'dev.nl')
     dev_y_path = os.path.join(data_folder, 'dev.sql')
     test_x_path = os.path.join(data_folder, 'test.nl')
-    
-    
-    print("Example Training Input:", train_x[0])
-    print("Example Training SQL:", train_y[0])
+
     
     # Load data using the existing load_lines function
     train_x = load_lines(train_x_path)
@@ -202,5 +208,8 @@ def load_prompting_data(data_folder):
     dev_x = load_lines(dev_x_path)
     dev_y = load_lines(dev_y_path)
     test_x = load_lines(test_x_path)
+
+    # print("Example Training Input:", train_x[0])
+    # print("Example Training SQL:", train_y[0])
     
     return train_x, train_y, dev_x, dev_y, test_x

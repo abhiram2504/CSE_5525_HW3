@@ -3,6 +3,7 @@ import argparse
 from tqdm import tqdm
 
 import torch
+import re
 import torch.nn as nn
 import numpy as np
 # import wandb
@@ -27,16 +28,16 @@ def get_args():
     # Training hyperparameters
     parser.add_argument('--optimizer_type', type=str, default="AdamW", choices=["AdamW"],
                         help="What optimizer to use")
-    parser.add_argument('--learning_rate', type=float, default=5e-4)
-    parser.add_argument('--weight_decay', type=float, default=0)
+    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--weight_decay', type=float, default=0.00)
 
     parser.add_argument('--scheduler_type', type=str, default="cosine", choices=["none", "cosine", "linear"],
                         help="Whether to use a LR scheduler and what type to use if so")
     parser.add_argument('--num_warmup_epochs', type=int, default=0,
                         help="How many epochs to warm up the learning rate for if using a scheduler")
-    parser.add_argument('--max_n_epochs', type=int, default=5,
+    parser.add_argument('--max_n_epochs', type=int, default=10,
                         help="How many epochs to train the model for")
-    parser.add_argument('--patience_epochs', type=int, default=3,
+    parser.add_argument('--patience_epochs', type=int, default=4,
                         help="If validation performance stops improving, how many epochs should we wait before stopping?")
 
     parser.add_argument('--use_wandb', action='store_true',
@@ -45,9 +46,9 @@ def get_args():
                         help="How should we name this experiment?")
 
     # Data hyperparameters
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--test_batch_size', type=int, default=16)
-    parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/test5")
+    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--test_batch_size', type=int, default=8)
+    parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/test10")
 
     args = parser.parse_args()
     return args
@@ -133,146 +134,79 @@ def train_epoch(args, model, train_loader, optimizer, scheduler):
   
  
 def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_path, model_record_path):
-    '''
-    Evaluation loop during training. Computes:
-    - Model loss on SQL queries
-    - Metrics using compute_metrics
-    - Model's syntax error rate
-
-    Args:
-        args: Argument namespace
-        model: T5 model to evaluate
-        dev_loader: DataLoader for development set
-        gt_sql_pth: Path to ground truth SQL queries
-        model_sql_path: Path to save model-generated SQL queries
-        gt_record_path: Path to ground truth records
-        model_record_path: Path to save model-generated records
-
-    Returns:
-        Tuple of (eval_loss, record_f1, record_em, sql_em, error_rate)
-    '''
     model.eval()
     total_loss = 0
     total_tokens = 0
-    criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
-    generated_queries = []
-
-
+    criterion = nn.CrossEntropyLoss()
+    
+    all_predictions = []
+    all_targets = []
+    
     with torch.no_grad():
         for encoder_input, encoder_mask, decoder_input, decoder_targets, _ in tqdm(dev_loader):
-            
             encoder_input = encoder_input.to(DEVICE)
             encoder_mask = encoder_mask.to(DEVICE)
             decoder_input = decoder_input.to(DEVICE)
             decoder_targets = decoder_targets.to(DEVICE)
-
-            # Compute loss
+            
             logits = model(
                 input_ids=encoder_input,
                 attention_mask=encoder_mask,
                 decoder_input_ids=decoder_input,
+                labels=decoder_targets
             )['logits']
-
+            
             non_pad = decoder_targets != PAD_IDX
             loss = criterion(logits.view(-1, logits.size(-1)), decoder_targets.view(-1))
-
-
-            with torch.no_grad():
-                num_tokens = torch.sum(non_pad).item()
-                total_loss += loss.item() * num_tokens
-                total_tokens += num_tokens
-
-            # Generate SQL queries
-            generation_config = GenerationConfig(
-                max_length=128,  # Adjust based on your expected max query length
-                num_return_sequences=1,
-                do_sample=False,  # Use greedy decoding
-                repetition_penalty=1.1,
-                no_repeat_ngram_size=2
-            )
-            generated_seq = model.generate(
+            
+            num_tokens = torch.sum(non_pad).item()
+            total_loss += loss.item() * num_tokens
+            total_tokens += num_tokens
+            
+            # Generate predictions using greedy decoding
+            generated_tokens = model.generate(
                 input_ids=encoder_input,
                 attention_mask=encoder_mask,
-                generation_config=generation_config
+                max_length=512
             )
             
-            # Decode generated sequences
-            generated_queries.extend([
-                model.tokenizer.decode(seq, skip_special_tokens=True) 
-                for seq in generated_seq
-            ])
-
-    # Save generated queries
-    save_queries_and_records(generated_queries, model_sql_path, model_record_path)
-
-    # Compute metrics
-    sql_em, record_em, record_f1, error_msgs = compute_metrics(
-        gt_sql_pth, model_sql_path, gt_record_path, model_record_path
-    )
-
-    # Compute error rate
-    error_rate = sum(1 for msg in error_msgs if msg != "") / len(error_msgs)
-
-    # Compute average loss
-    eval_loss = total_loss / total_tokens if total_tokens > 0 else 0
-
-    return eval_loss, record_f1, record_em, sql_em, error_rate
-        
-def test_inference(args, model, test_loader, model_sql_path, model_record_path):
-    '''
-    Perform inference on the test set to generate SQL queries and their associated records.
+            all_predictions.extend(generated_tokens.cpu().tolist())
+            all_targets.extend(decoder_targets.cpu().tolist())
     
-    Args:
-        args: Argument namespace
-        model: Trained T5 model
-        test_loader: DataLoader for test set
-        model_sql_path: Path to save model-generated SQL queries
-        model_record_path: Path to save model-generated records
-    '''
-    model.eval()
-    generated_queries = []
+    save_queries_and_records(all_predictions, model_sql_path, model_record_path)
+    
+    avg_loss = total_loss / total_tokens if total_tokens > 0 else 0
+    
+    # Compute additional metrics (F1, EM, SQL error rate)
+    record_f1, record_em, sql_em, error_rate = compute_metrics(
+        all_predictions, all_targets, gt_sql_pth, model_sql_path, gt_record_path, model_record_path
+    )
+    
+    return avg_loss, record_f1, record_em, sql_em, error_rate
 
+    
+
+def test_inference(args, model, test_loader, model_sql_path, model_record_path):
+    model.eval()
+    all_predictions = []
+    
     with torch.no_grad():
-        for encoder_input, encoder_mask, initial_decoder_inputs in tqdm(test_loader, desc="Test Inference"):
-            # Move inputs to the correct device
+        for encoder_input, encoder_mask, _, _, _ in tqdm(test_loader):
             encoder_input = encoder_input.to(DEVICE)
             encoder_mask = encoder_mask.to(DEVICE)
             
-            # Configure generation settings
-            generation_config = GenerationConfig(
-                max_length=512,  # Adjust based on expected max query length
-                num_return_sequences=1,
-                do_sample=False,  # Use greedy decoding
-                early_stopping=True
-            )
-            
-            # Generate SQL queries
-            generated_seq = model.generate(
+            # Generate predictions using greedy decoding
+            generated_tokens = model.generate(
                 input_ids=encoder_input,
                 attention_mask=encoder_mask,
-                generation_config=generation_config
+                max_length=512  # Adjust max_length as needed
             )
             
-            # Decode generated sequences
-            batch_queries = [
-                model.tokenizer.decode(seq, skip_special_tokens=True) 
-                for seq in generated_seq
-            ]
-            
-            # Extend list of generated queries
-            generated_queries.extend(batch_queries)
+            all_predictions.extend(generated_tokens.cpu().tolist())
     
-    # Save generated queries and their records
-    save_queries_and_records(generated_queries, model_sql_path, model_record_path)
-    
-    # Optional: Print some generated queries for verification
-    print(f"Generated {len(generated_queries)} SQL queries")
-    if len(generated_queries) > 0:
-        print("Sample generated queries:")
-        for q in generated_queries[:5]:
-            print(q)
-    
-    return generated_queries
+    # Save generated queries and records
+    save_queries_and_records(all_predictions, model_sql_path, model_record_path)
+
 
 def main():
     # Get key arguments
