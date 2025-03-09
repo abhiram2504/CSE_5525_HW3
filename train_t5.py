@@ -28,7 +28,7 @@ def get_args():
     # Training hyperparameters
     parser.add_argument('--optimizer_type', type=str, default="AdamW", choices=["AdamW"],
                         help="What optimizer to use")
-    parser.add_argument('--learning_rate', type=float, default=1e-4)
+    parser.add_argument('--learning_rate', type=float, default=5e-4)
     parser.add_argument('--weight_decay', type=float, default=0.00)
 
     parser.add_argument('--scheduler_type', type=str, default="cosine", choices=["none", "cosine", "linear"],
@@ -132,7 +132,7 @@ def train_epoch(args, model, train_loader, optimizer, scheduler):
 
     return total_loss / total_tokens
   
- 
+
 def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_path, model_record_path):
     model.eval()
     total_loss = 0
@@ -169,11 +169,17 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
                 attention_mask=encoder_mask,
                 max_length=512
             )
-            
-            all_predictions.extend(generated_tokens.cpu().tolist())
-            all_targets.extend(decoder_targets.cpu().tolist())
+
+            # Decode generated tokens to SQL text
+            decoded_outputs = [model.tokenizer.decode(output, skip_special_tokens=True) for output in generated_tokens]
+            all_predictions.extend(decoded_outputs)
+
+            # Decode targets to SQL text
+            decoded_targets = [model.tokenizer.decode(target, skip_special_tokens=True) for target in decoder_targets]
+            all_targets.extend(decoded_targets)
     
     save_queries_and_records(all_predictions, model_sql_path, model_record_path)
+    
     
     avg_loss = total_loss / total_tokens if total_tokens > 0 else 0
     
@@ -181,6 +187,10 @@ def eval_epoch(args, model, dev_loader, gt_sql_pth, model_sql_path, gt_record_pa
     record_f1, record_em, sql_em, error_rate = compute_metrics(
         gt_sql_pth, model_sql_path, gt_record_path, model_record_path
     )
+    
+    total_queries = len(all_predictions)
+    error_count = len([e for e in error_rate if e])
+    error_rate = error_count / total_queries if total_queries > 0 else 0
     
     return avg_loss, record_f1, record_em, sql_em, error_rate
 
@@ -201,8 +211,10 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
                 attention_mask=encoder_mask,
                 max_length=512  # Adjust max_length as needed
             )
+
+            decoded_outputs = [model.tokenizer.decode(output, skip_special_tokens=True) for output in generated_tokens]
             
-            all_predictions.extend(generated_tokens.cpu().tolist())
+            all_predictions.extend(decoded_outputs)
     
     # Save generated queries and records
     save_queries_and_records(all_predictions, model_sql_path, model_record_path)
