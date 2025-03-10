@@ -4,9 +4,10 @@
 
 \title{CSE 5525: Assignment 3}
 
-\author{Full Name}
+\author{Abhiram Rustagi}
 
-\date{}
+
+\date{\today}
 
 
 \colmfinalcopy
@@ -27,33 +28,35 @@ Depending on your pre-processing, some numbers may be identical across tables.
 \toprule
 Statistics Name & Train & Dev \\
 \midrule
-Number of examples & \textcolor{gray}{XXX} & \textcolor{gray}{XXX} \\
-Mean sentence length & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
-Mean SQL query length & \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
-Vocabulary size (natural language)& \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
-Vocabulary size (SQL)& \textcolor{gray}{XXX}& \textcolor{gray}{XXX}  \\
+Number of examples & \textcolor{gray}{4225} & \textcolor{gray}{466} \\
+Mean sentence length & \textcolor{gray}{23.0973}& \textcolor{gray}{23.0708} \\
+Mean SQL query length & \textcolor{gray}{217.3725}& \textcolor{gray}{211.053}  \\
+Vocabulary size (natural language)& \textcolor{gray}{796}& \textcolor{gray}{470}  \\
+Vocabulary size (SQL)& \textcolor{gray}{556}& \textcolor{gray}{396}  \\
 \bottomrule
 \end{tabular}
 \caption{Data statistics before any pre-processing. \textcolor{gray}{You need to at least provide the statistics listed above, and can add new entries.}}
 \label{tab:data_stats_before}
 \end{table}
 
-\begin{table}[h!]
-\centering
-\begin{tabular}{lcc}
-\toprule
-Statistics Name & Train & Dev \\
-\midrule
-\multicolumn{3}{l}{\textbf{Model name}} \\ % \textcolor{gray}{(T5 fine-tuning or T5 from scratch)}} \\
-\textcolor{gray}{Statistics Name} & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
-\midrule
-\multicolumn{3}{l}{\textbf{Model name}} \\ % \textcolor{gray}{(T5 fine-tuning or T5 from scratch)}} \\
-\textcolor{gray}{Statistics Name} & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
-\bottomrule
-\end{tabular}
-\caption{Data statistics after pre-processing. \textcolor{gray}{You need to at least provide the statistics listed in \autoref{tab:data_stats_before} (except for the number of lines), and can add new entries.}}
-\label{tab:data_stats_after}
-\end{table}
+\textbf{\textit{Note:} \\\ For table 2, I had similar statistics as the data is not being modified.}
+
+% \begin{table}[h!]
+% \centering
+% \begin{tabular}{lcc}
+% \toprule
+% Statistics Name & Train & Dev \\
+% \midrule
+% \multicolumn{3}{l}{\textbf{Model name}} \\ % \textcolor{gray}{(T5 fine-tuning or T5 from scratch)}} \\
+% \textcolor{gray}{Statistics Name} & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
+% \midrule
+% \multicolumn{3}{l}{\textbf{Model name}} \\ % \textcolor{gray}{(T5 fine-tuning or T5 from scratch)}} \\
+% \textcolor{gray}{Statistics Name} & \textcolor{gray}{XXX}& \textcolor{gray}{XXX} \\
+% \bottomrule
+% \end{tabular}
+% \caption{Data statistics after pre-processing. \textcolor{gray}{You need to at least provide the statistics listed in \autoref{tab:data_stats_before} (except for the number of lines), and can add new entries.}}
+% \label{tab:data_stats_after}
+% \end{table}
 
 
 
@@ -73,16 +76,18 @@ Be clear enough that we can replicate your approach in PyTorch using only your d
 \toprule
 Design choice & Description \\
 \midrule
-Data processing & \textcolor{gray}{Describe the data processing steps you undertook, if any.} \\
-Tokenization & \textcolor{gray}{Describe how you did the tokenization for the inputs to the encoder and decoder. If you use anything else than the default T5 tokenizer, specify what you use, and why you choose to use it.} \\
-Architecture & \textcolor{gray}{Describe the components in the T5 architecture that you chose to fine-tune. Did you fine-tune the entire model, specific layers?} \\
-Hyperparameters & \textcolor{gray}{List the key hyperparameters that you used, including the learning rate, batch size, and stopping criteria.} \\
+Data processing & \textcolor{gray}{Tokenization using T5’s built-in tokenizer with normalization
+(lowercasing, SQL keyword standardization).} \\
+Tokenization & \textcolor{gray}{Used T5 tokenizer without modifications.} \\
+Architecture & \textcolor{gray}{ Fine-tuned the full T5-small model.} \\
+Hyperparameters & \textcolor{gray}{Learning rate: 5e-4, \newline  Batch size: 16, \newline Optimizer: AdamW, \newline Scheduler: Cosine, \newline Max epochs: 10, \newline Patience epochs: 4, \newline Max new tokens: 512.} \\
 \bottomrule
 \end{tabular}
 \caption{Details of the best-performing T5 model configurations (fine-tuned)}
 \label{tab:t5_results_ft}
 \end{table}
 
+\textbf{\textit{Note:} \\ Table 3 would have similar design choices, as nothing was done explicitly to differentiate from the fine tuned model.}
 
 \begin{table}[h!]
 \centering
@@ -90,9 +95,11 @@ Hyperparameters & \textcolor{gray}{List the key hyperparameters that you used, i
 \toprule
 Design choice & Description \\
 \midrule
-Data processing & \textcolor{gray}{Describe the data processing steps you undertook, if any.} \\
-Tokenization & \textcolor{gray}{Describe how you did the tokenization for the inputs to the encoder and decoder. If you use anything else than the default T5 tokenizer, specify what you use, and why you choose to use it.} \\
-Hyperparameters & \textcolor{gray}{List the key hyperparameters that you used, including the learning rate, batch size, and stopping criteria.} \\
+Data processing & \textcolor{gray}{Tokenization using T5’s built-in tokenizer with normalization
+(lowercasing, SQL keyword standardization).} \\
+Tokenization & \textcolor{gray}{Used T5 tokenizer without modifications.} \\
+Architecture & \textcolor{gray}{ Fine-tuned the full T5-small model.} \\
+Hyperparameters & \textcolor{gray}{Learning rate: 5e-4, \newline  Batch size: 16, \newline Optimizer: AdamW, \newline Scheduler: Cosine, \newline Max epochs: 10, \newline Patience epochs: 4, \newline Max new tokens: 512.} \\
 \bottomrule
 \end{tabular}
 \caption{Details of the best-performing T5 model configurations (from scratch)}
@@ -123,16 +130,29 @@ For all entries, you need to specify the corresponding values of $k$.
 \toprule
 \textbf{Shot} & \textbf{Prompt} \\
 \midrule
-    \textcolor{gray}{k} & \textcolor{gray}{Everything in this table serves as a placeholder to show an example of prompt and formatting. It is just for reference, and you need to remove all the text here and put your own prompt.} \\
-    & \textcolor{gray}{You can design and experiment with different prompts to find what works better. In the prompt, it could be helpful to provide clear instructions, provide the relevant context, and you can also provide examples. You need to experiment with different numbers of examples. In this prompt, two examples are provided below ($k = 2$, and this is 2-shot prompting):} \\
-    & \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    & \textcolor{gray}{Response: [response]} \\
-    & \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    & \textcolor{gray}{Response: [response]} \\
+     \textcolor{gray}{all} & \textcolor{gray}{\textless instructions\textgreater } \\
+    & \textcolor{gray}{You are an SQL expert that translates user requests into SQL queries for a flight database.} \\
+    & \textcolor{gray}{Here is the schema: [shortened schema]} \\
+    & \textcolor{gray}{Please generate ONLY the SQL query, and do not repeat the prompt.} \\
+    & \textcolor{gray}{\textless /instructions\textgreater } \\
     & \\
-    & \textcolor{gray}{You can choose to provide additional instruction or not before providing the instruction to the model as well. Below is the task that you are asking the model to perform:} \\
-    & \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    & \textcolor{gray}{Response: } \\
+    & \textcolor{gray}{\textless user\_request\textgreater} \\
+    & \textcolor{gray}{[Prompt example]} \\
+    & \textcolor{gray}{\textless /user\_request\textgreater} \\
+    & \textcolor{gray}{\textless response\textgreater} \\
+    & \textcolor{gray}{[Response (SQL) example]} \\
+    & \textcolor{gray}{\textless /response\textgreater} \\
+    & \textcolor{gray}{\textless user\_request\textgreater} \\
+    & \textcolor{gray}{[Prompt example]} \\
+    & \textcolor{gray}{\textless /user\_request\textgreater} \\
+    & \textcolor{gray}{\textless response\textgreater} \\
+    & \textcolor{gray}{[Response (SQL) example]} \\
+    & \textcolor{gray}{\textless /response\textgreater} \\
+    & \\
+    & \textcolor{gray}{\textless user\_request\textgreater} \\
+    & \textcolor{gray}{[Actual prompt]} \\
+    & \textcolor{gray}{\textless /user\_request\textgreater} \\
+    & \textcolor{gray}{\textless response\textgreater} \\
 \bottomrule
 \end{tabular}
 \caption{Instruction prompts used for zero- and/or few-shot prompting.}
@@ -142,7 +162,7 @@ For all entries, you need to specify the corresponding values of $k$.
 
 \paragraph{Example selections:} Please provide a clear, detailed, and succinct description of how you selected the examples when $k > 0$.
 
-\textcolor{gray}{Remove this text and place your description here!}
+\textcolor{gray}{There is random selection of examples when $k > 0$}
 
 
 
@@ -170,20 +190,11 @@ When reporting your results in \autoref{tab:results}, you will need to refer to 
 \toprule
 \textbf{Prompt} \\
 \midrule
-    \textcolor{gray}{Everything in this table serves as a placeholder to show an example of prompt and formatting. It is just for reference, and you need to remove all the text here and put your own prompt.} \\
-    \textcolor{gray}{You can design and experiment with different prompts to find what works better.} \textcolor{ForestGreen}{In the prompt, it could be helpful to provide clear instructions, provide the relevant context, and you can also provide examples.} \textcolor{gray}{You need to experiment with different numbers of examples. In this prompt, two examples are provided below ($k = 2$, and this is 2-shot prompting):} \\
-   \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    \textcolor{gray}{Response: [response]} \\
-    \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    \textcolor{gray}{Response: [response]} \\
-    \\
-   \textcolor{Blue}{You can choose to provide additional instruction or not before providing the instruction to the model as well. Below is the task that you are asking the model to perform:} \\
-    \textcolor{gray}{Instruction: [instruction-sentence]} \\
-    \textcolor{gray}{Response: } \\
+   \textcolor{gray}{The prompt is the same as that given in table 4.} \\
 \bottomrule
 \end{tabular}
 \caption{The best prompt.
-{\textcolor{gray}{Remove this text and place a short description of your best prompt. If it is the same as the prompt in \autoref{tab:icl_prompts}, clearly mention the value of $k$. If it is not the same, state explicitly how you built it.}}
+{\textcolor{gray}{Similar prompt as in table 4. The best value is when $k = 3$}}
 }
 \label{tab:best_prompt}
 \end{table}
@@ -196,15 +207,14 @@ When reporting your results in \autoref{tab:results}, you will need to refer to 
 \toprule
 \textbf{Color} & \textbf{Description} \\
 \midrule
-\textcolor{ForestGreen}{ForestGreen} & \textcolor{ForestGreen}{This is the description for the ablation experiment where the part in ForestGreen is ablated from the best prompt.} \\
-\textcolor{Blue}{Blue} & \textcolor{Blue}{This is the description for the ablation experiment where the part in Blue is ablated from the best prompt.} \\
-& \textcolor{Blue}{In the ablation experiment, we experimented with swapping the order of both sentences, because...} \\
+\textcolor{ForestGreen}{ForestGreen} & \textcolor{ForestGreen}{I always encountered an out-of-memory error for the GPU when trying this. I then sought advice from my friend Steven on how to proceed. Initially, I tried using the prompt with and without the schema, but I kept getting the exact same prompt returned. It turned out that the issue was due to token size limitations and the model having trouble recognizing the end of the prompt. That's why I experimented with using an end marker. Switching to tags provided more specificity and clarity about what I wanted the model to do.} \\
+\textcolor{Blue}{Blue} & \textcolor{Blue}{I tested two different versions of the schema:
+A shortened version where the “ents” field had only entity names and their field names, the “defaults” field included only entity names, and the “links” field listed entity names and their linked entities. This version worked the best.} \\
+& \textcolor{Blue}{The full scheme, where I kept getting the out of memory error.} \\
 % \midrule
 \bottomrule
 \end{tabular}
-\caption{Ablation variants.
-{\textcolor{gray}{Put a clear description of the ablation experiments you did. If it helps to describe more clearly, you can also provide an example of the relevant part of the prompt before and after the ablation.}
-}}
+\caption{Ablation variants.}
 \label{tab:ablation_explanation}
 \end{table}
 
@@ -234,25 +244,21 @@ You may add more rows if needed.
   \multicolumn{3}{l}{\textbf{Dev Results}} \\
   \midrule
   \multicolumn{3}{l}{\textbf{LLM Prompting}} \\
-  Full model & XX.XX & XX.XX \\ 
-  Variant1 \textcolor{gray}{(e.g. ICL, $k$ = $...$)} & XX.XX & XX.XX \\
-  Variant2 \textcolor{gray}{(e.g. ICL, $k$ = $...$)} & XX.XX & XX.XX \\
-  Variant3 \textcolor{ForestGreen}{(e.g. ablating the explanation sentence in \autoref{tab:best_prompt})} & XX.XX & XX.XX \\
-  Variant4 \textcolor{Blue}{(e.g. ablating by doing ... in \autoref{tab:best_prompt})} & XX.XX & XX.XX \\
-  Variant & XX.XX & XX.XX \\[5pt]
+  Full model & 16.47 & 18.86 \\ 
+  Variant1 \textcolor{gray}{(ICL, $k$ = $1$)} & 14.45 & 18.75 \\
+  Variant2 \textcolor{gray}{(ICL, $k$ = $0$)} & 11.58 & 11.58 \\
+  Variant3 \textcolor{ForestGreen}{(e.g. ablating the explanation sentence in \autoref{tab:best_prompt})} & 11.58 & 11.58 \\
+  Variant4 \textcolor{Blue}{(ICL, $k$ = $0$), full schema} & ERR & ERR \\
   \multicolumn{3}{l}{\textbf{T5 fine-tuned}} \\
-  Full model & XX.XX & XX.XX \\[5pt]
-  % Variant1 & XX.XX & XX.XX \\
-  % Variant2 & XX.XX & XX.XX \\
-  % Variant3 & XX.XX & XX.XX \\
+  Full model & 35.2 & 38.2 \\[5pt]
+  
   \multicolumn{3}{l}{\textbf{T5 from scratch}} \\
-  Full model & XX.XX & XX.XX \\ 
-  % Variant1 & XX.XX & XX.XX \\
-  % Variant2 & XX.XX & XX.XX \\
-  % Variant3 & XX.XX & XX.XX \\
+  Full model & 32.6 & 35.51 \\ 
+
   \midrule
   \multicolumn{3}{l}{\textbf{Test Results}} \\
   \midrule
+  \textbf{How do you test this? I am not really sure?}
   ICL & XX.XX & XX.XX \\ 
   T5 fine-tuning & XX.XX & XX.XX \\
   T5 from scratch & XX.XX & XX.XX \\
@@ -265,7 +271,12 @@ You may add more rows if needed.
 
 \paragraph{ICL sensitivity to $k$:} For ICL, please provide a plot of the Record F1 on the development set that the model achieved with different values of $k$. The x-axis should be $k$, and the y-axis the Record F1. The prompts and examples used for this plot should correspond to the ones you described in Subsection \ref{sec:llm:icl}.
 
-\textcolor{gray}{Remove this text and place your plot here!}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figure_1.png}
+    \caption{F1 Scores vs. k-values}
+    \label{fig:Figure_1}
+\end{figure}
 
 \newpage
 
@@ -280,21 +291,23 @@ You may add more rows to the table.
 \begin{landscape}
 \begin{table}
   \centering
-  \begin{tabular}{p{2cm}p{2cm}p{6cm}p{6cm}p{6cm}}
+  \begin{tabular}{p{2cm}p{2cm}p{10cm}p{6cm}p{2cm}}
     \toprule
-    \textbf{Error Type} & \textbf{Relevant Models}& \textbf{Example Of Error} & \textbf{Error Description} & \textbf{Statistics} \\
+    \textbf{Error Type} & \textbf{Relevant Models} & \textbf{Example of Error (All from T5 FT)} & \textbf{Error Description} & \textbf{Statistics} \\
     \midrule
-    \textcolor{gray}{Error name} & \textcolor{gray}{ICL, T5 fine-tuned or T5 from scratch} & \textcolor{gray}{Snippet from datapoint examplifying error} & \textcolor{gray}{Describe the error in natural language} & \textcolor{gray}{Provide statistics in the form ``COUNT/TOTAL'' on the prevalence of the error. TOTAL is the number of relevant examples (e.g. number of queries, for query-level error), and COUNT is the number of examples that showed this error.}  \\
-    & & & & \textcolor{gray}{If an error type applies to several models, you should provide the statistics in the form ``MODEL NAME: COUNT/TOTAL''.} \\
+    \textcolor{gray}{Unnecessary Conditions} & \textcolor{gray}{T5 fine-tuned} & \textcolor{gray}{INCORRECT:\newline SELECT DISTINCT flight\_1.flight\_id FROM flight flight\_1, airport airport\_1, airport\_service airport\_service\_1, city city\_1 WHERE flight\_1.to\_airport = airport\_1.airport\_code AND airport\_1.airport\_code = 'MKE' AND flight\_1.from\_airport = airport\_service\_1.airport\_code AND airport\_service\_1.city\_code = city\_1.city\_code AND 1 = 1} & \textcolor{gray}{Unnecessary tautologies such as "AND 1 = 1" that do not contribute to query logic} & \textcolor{gray}{29/466} \\
     \midrule
-    &  &  &  & \\
+    \textcolor{gray}{Syntax Issues (Parentheses, Commas, etc.)} & \textcolor{gray}{T5 fine-tuned} & \textcolor{gray}{CORRECT:\newline SELECT DISTINCT aircraft\_1.aircraft\_code FROM aircraft aircraft\_1 WHERE aircraft\_1.aircraft\_code = '734' \newline \newline INCORRECT:\newline SELECT DISTINCT flight\_1.flight\_id FROM flight flight\_1, airport\_service airport\_service\_1, city city\_1 WHERE flight\_1.airline\_code = '734' AND( flight\_1.to\_airport = airport\_service\_1.airport\_code AND airport\_service\_1.city\_code = city\_1.city\_code AND city\_1.city\_name = '734'} & \textcolor{gray}{Unbalanced parentheses or missing commas and other syntax errors} & \textcolor{gray}{131/466} \\
+    \midrule
+    \textcolor{gray}{Redundant Joins} & \textcolor{gray}{T5 fine-tuned} & \textcolor{gray}{INCORRECT:\newline SELECT DISTINCT flight\_1.flight\_id FROM flight flight\_1, airport\_service airport\_service\_1, city city\_1, airport\_service airport\_service\_2, city city\_2, days days\_1, date\_day date\_day\_1 WHERE flight\_1.from\_airport = airport\_service\_1.airport\_code AND airport\_service\_1.city\_code = city\_1.city\_code AND city\_1.city\_name = 'DENVER' AND( flight\_1.to\_airport = airport\_service\_2.airport\_code AND airport\_service\_2.city\_code = city\_2.city\_code AND city\_2.city\_name = 'BOSTON' AND flight\_1.flight\_days = days\_1.days\_code AND days\_1.day\_name = date\_day\_1.day\_name AND date\_day\_1.year = 1991 AND date\_day\_1.month\_number = 8 AND date\_day\_1.day\_number = 9 )} & \textcolor{gray}{Includes unnecessary joins that do not change the result of the query} & \textcolor{gray}{42/466} \\
+    \midrule
+    \textcolor{gray}{Incorrect or Mismatched Conditions} & \textcolor{gray}{T5 fine-tuned} & \textcolor{gray}{CORRECT:\newline SELECT DISTINCT aircraft\_1.aircraft\_code FROM aircraft aircraft\_1 WHERE aircraft\_1.basic\_type = 'F28' \newline \newline INCORRECT:\newline SELECT DISTINCT capacity\_1.flight\_id FROM capacity\_1, 'F28'} & \textcolor{gray}{Differences in condition clauses, such as time ranges, city names, or flight\_id references} & \textcolor{gray}{460/466} \\
     \bottomrule
   \end{tabular}
+  \caption{This table presents a qualitative analysis of errors found in queries generated by the T5 fine-tuned model on the development set, covering various error types.}
   \label{tab:qualitative}
-  \caption{Use this table for your qualitative analysis on the dev set, for all the three models.}\label{tab:qualitative}
 \end{table}
 \end{landscape}
-
 
 
 \end{document}
