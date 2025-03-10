@@ -209,7 +209,8 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
             generated_tokens = model.generate(
                 input_ids=encoder_input,
                 attention_mask=encoder_mask,
-                max_length=512  # Adjust max_length as needed
+                max_length=512,
+                num_beams=4 
             )
 
             decoded_outputs = [model.tokenizer.decode(output, skip_special_tokens=True) for output in generated_tokens]
