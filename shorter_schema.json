@@ -1,0 +1,185 @@
+{
+    "ents": {
+      "restriction": [
+        "no_discounts",
+        "minimum_stay",
+        "stopovers",
+        "restriction_code",
+        "application",
+        "maximum_stay",
+        "saturday_stay_required",
+        "advance_purchase"
+      ],
+      "flight_stop": [
+        "departure_airline",
+        "stop_number",
+        "arrival_flight_number",
+        "flight_id",
+        "arrival_time",
+        "departure_flight_number",
+        "stop_time",
+        "arrival_airline",
+        "stop_days",
+        "stop_airport",
+        "departure_time"
+      ],
+      "food_service": [
+        "meal_code",
+        "compartment",
+        "meal_number",
+        "meal_description"
+      ],
+      "month": [
+        "month_number",
+        "month_name"
+      ],
+      "code_description": [
+        "code",
+        "description"
+      ],
+      "city": [
+        "city_name",
+        "country_name",
+        "state_code",
+        "time_zone_code",
+        "city_code"
+      ],
+      "flight_fare": [
+        "flight_id",
+        "fare_id"
+      ],
+      "state": [
+        "country_name",
+        "state_code",
+        "state_name"
+      ],
+      "fare_basis": [
+        "discounted",
+        "class_type",
+        "season",
+        "basis_days",
+        "booking_class",
+        "night",
+        "premium",
+        "fare_basis_code",
+        "economy"
+      ],
+      "date_day": [
+        "day_number",
+        "month_number",
+        "day_name",
+        "year"
+      ],
+      "time_interval": [
+        "period",
+        "end_time",
+        "begin_time"
+      ],
+      "flight": [
+        "to_airport",
+        "aircraft_code_sequence",
+        "dual_carrier",
+        "flight_id",
+        "stops",
+        "flight_days",
+        "connections",
+        "arrival_time",
+        "time_elapsed",
+        "flight_number",
+        "from_airport",
+        "airline_flight",
+        "airline_code",
+        "meal_code",
+        "departure_time"
+      ],
+      "dual_carrier": [
+        "low_flight_number",
+        "high_flight_number",
+        "main_airline",
+        "service_name",
+        "dual_airline"
+      ],
+      "aircraft": [
+        "aircraft_code",
+        "capacity",
+        "wing_span",
+        "engines",
+        "aircraft_description",
+        "basic_type",
+        "weight",
+        "pressurized",
+        "length",
+        "propulsion",
+        "pay_load",
+        "cruising_speed",
+        "range_miles",
+        "wide_body",
+        "manufacturer"
+      ],
+      "fare": [
+        "to_airport",
+        "restriction_code",
+        "round_trip_required",
+        "fare_id",
+        "from_airport",
+        "one_direction_cost",
+        "fare_basis_code",
+        "round_trip_cost",
+        "fare_airline"
+      ],
+      "compartment_class": [
+        "compartment",
+        "class_type"
+      ],
+      "flight_leg": [
+        "flight_id",
+        "leg_number",
+        "leg_flight"
+      ],
+      "days": [
+        "days_code",
+        "day_name"
+      ],
+      "airport_service": [
+        "minutes_distant",
+        "airport_code",
+        "direction",
+        "city_code",
+        "miles_distant"
+      ],
+      "airport": [
+        "airport_code",
+        "airport_name",
+        "airport_location",
+        "minimum_connect_time",
+        "country_name",
+        "state_code",
+        "time_zone_code"
+      ],
+      "time_zone": [
+        "time_zone_name",
+        "hours_from_gmt",
+        "time_zone_code"
+      ],
+      "airline": [
+        "note",
+        "airline_code",
+        "airline_name"
+      ],
+      "equipment_sequence": [
+        "aircraft_code",
+        "aircraft_code_sequence"
+      ],
+      "ground_service": [
+        "airport_code",
+        "transport_type",
+        "city_code",
+        "ground_fare"
+      ],
+      "class_of_service": [
+        "booking_class",
+        "class_description",
+        "rank"
+      ]
+    }
+  }

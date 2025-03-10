@@ -1,3 +1,4 @@
+from pathlib import Path
 import os, argparse, random
 from tqdm import tqdm
 import pickle
@@ -14,7 +15,7 @@ from prompting_utils import read_schema, extract_sql_query, save_logs
 from load_data import load_prompting_data
 
 DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu') # you can add mps
-MAX_NEW_TOKENS = 1024
+MAX_NEW_TOKENS = 2048
 
 def get_args():
     '''
@@ -64,13 +65,13 @@ def create_prompt(sentence: str,
     """
     instruction = f"""
         <instructions>
-        You are a helpful assistant that translates user requests into SQL queries for a flight database.
+        You are an SQL expert that translates user requests into SQL queries for a flight database.
         Here is the schema: {schema_str}
         Please generate ONLY the SQL query, and do not repeat the prompt.
         </instructions>
     """
 
-    if k == 0 or not train_x or not train_y:
+    if not train_x or not train_y or k == 0:
         prompt = instruction + f"<user_request>\n{sentence}\n</user_request>\n<response>\n"
         return prompt
 
@@ -109,16 +110,23 @@ def exp_kshot(tokenizer, model, inputs, k, train_x, train_y, schema_str):
     extracted_queries = []
 
     for i, sentence in tqdm(enumerate(inputs)):
-        prompt = create_prompt(sentence, k) # Looking at the prompt may also help
+        prompt = create_prompt(sentence, k)
 
         input_ids = tokenizer(prompt, return_tensors="pt").to(DEVICE)
-        outputs = model.generate(**input_ids, max_new_tokens=MAX_NEW_TOKENS) # You should set MAX_NEW_TOKENS
-        response = tokenizer.decode(outputs[0]) # How does the response look like? You may need to parse it
+        outputs = model.generate(**input_ids, max_new_tokens=MAX_NEW_TOKENS, do_sample=True, temperature=0.7) 
+        
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True) 
+        response = response.split("<response>")[-1].strip()  
+        response = response.replace("</response>", "").strip()
+        response = response.replace("\n", " ")
+        response = " ".join(response.split())
+          
         raw_outputs.append(response)
 
         # Extract the SQL query
         extracted_query = extract_sql_query(response)
         extracted_queries.append(extracted_query)
+        
     return raw_outputs, extracted_queries
 
 
@@ -180,8 +188,7 @@ def initialize_model_and_tokenizer(model_name, to_quantize=False):
         # Native weights exported in bfloat16 precision, but you can use a different precision if needed
         model = AutoModelForCausalLM.from_pretrained(
             model_id,
-            device_map="auto",
-            torch_dtype=torch.bfloat16, 
+            torch_dtype=torch.bfloat16
         )
         # model = AutoModelForCausalLM.from_pretrained("google/gemma-1.1-2b-it")
     elif model_name == "codegemma":
@@ -194,11 +201,9 @@ def initialize_model_and_tokenizer(model_name, to_quantize=False):
             )
             model = AutoModelForCausalLM.from_pretrained(model_id,
                                                         torch_dtype=torch.bfloat16,
-                                                        device_map="auto",
                                                         config=nf4_config).to(DEVICE)
         else:
             model = AutoModelForCausalLM.from_pretrained(model_id,
-                                                         device_map="auto",
                                                         torch_dtype=torch.bfloat16).to(DEVICE)
     return tokenizer, model
 
@@ -221,13 +226,18 @@ def main():
     data_folder = 'data'
     train_x, train_y, dev_x, dev_y, test_x = load_prompting_data(data_folder)
 
+
+    # Read schema
+    schema_path = Path("short_schema.json")
+    schema_str = read_schema(schema_path)
+
     # Model and tokenizer
     tokenizer, model = initialize_model_and_tokenizer(model_name, to_quantize)
 
     for eval_split in ["dev", "test"]:
         eval_x, eval_y = (dev_x, dev_y) if eval_split == "dev" else (test_x, None)
 
-        raw_outputs, extracted_queries = exp_kshot(tokenizer, model, eval_x, shot, train_x, train_y, read_schema(args.schema))
+        raw_outputs, extracted_queries = exp_kshot(tokenizer, model, eval_x, shot, train_x, train_y, schema_str)
 
         # You can add any post-processing if needed
         # You can compute the records with `compute_records``
@@ -235,12 +245,13 @@ def main():
         output_prefix = f"{model_name}_{experiment_name}_{eval_split}_k{shot}_p{ptype}"
 
 
-        gt_query_records = f"records/{eval_split}_gt_records.pkl"
-        gt_sql_path = os.path.join(f'data/{eval_split}.sql')
-        gt_record_path = os.path.join(f'records/{eval_split}_gt_records.pkl')
-        model_sql_path = os.path.join(f'results/gemma_{experiment_name}_dev.sql')
-        model_record_path = os.path.join(f'records/gemma_{experiment_name}_dev.pkl')
+        gt_query_records = f"records/ground_truth_dev.pkl"
+        gt_sql_path = f"data/dev.sql"
+        model_sql_path = os.path.join("results", f"gemma_{experiment_name}_{eval_split}.sql")
+        model_record_path = os.path.join("records", f"gemma_{experiment_name}_{eval_split}.pkl")
         
+        save_queries_and_records(extracted_queries, model_sql_path, model_record_path)
+
         if eval_split == "test":
             # Just save the generated queries
             with open(model_sql_path, 'w') as f:
@@ -263,11 +274,12 @@ def main():
         # Save results
         # You can for instance use the `save_queries_and_records` function
 
-        # Save logs, if needed
-        log_path = f"logs/{output_prefix}.log"
-        os.makedirs('logs', exist_ok=True)
-        save_logs(log_path, sql_em, record_em, record_f1, model_error_msgs)
-
+       # Save logs
+        log_dir = Path("logs")
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / f"{experiment_name}_{eval_split}.log"
+        save_logs(str(log_path), sql_em, record_em, record_f1, model_error_msgs)
+        print(f"Logs saved to {log_path}")
 
 if __name__ == "__main__":
     main()
