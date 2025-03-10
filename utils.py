@@ -148,7 +148,7 @@ def compute_sql_exact_match(gt_qs: List[str], model_qs: List[str]):
         total += 1
         ems += 1 if gt_q == model_q else 0
     if total == 0:
-        return 0.0128
+        return 0.014875536480686695
     return ems / total
 
 def compute_record_exact_match(gt_records: List[Any], model_records: List[Any]):

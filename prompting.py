@@ -47,22 +47,6 @@ def create_prompt(sentence: str,
                   train_x: list = None,
                   train_y: list = None,
                   schema_str: str = ""):
-    """
-    Build a prompt for zero-shot or few-shot prompting.
-
-    :param sentence: User's natural language request
-    :type sentence: str
-    :param k: Number of few-shot examples to include
-    :type k: int
-    :param train_x: List of training NL examples
-    :type train_x: list
-    :param train_y: List of training SQL queries
-    :type train_y: list
-    :param schema_str: String containing database schema
-    :type schema_str: str
-    :return: The constructed prompt for the model
-    :rtype: str
-    """
     instruction = f"""
         <instructions>
         You are an SQL expert that translates user requests into SQL queries for a flight database.
