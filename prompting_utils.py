@@ -18,7 +18,6 @@ def extract_sql_query(response):
     pattern = r"(?i)(SELECT\s.*?)(?:;|\s*$)"
     match = re.search(pattern, response, re.DOTALL)
     if match:
-        # Extract the query without any trailing semicolon
         return match.group(1).strip()
     return "SELECT 1"
 

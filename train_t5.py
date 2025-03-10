@@ -48,7 +48,7 @@ def get_args():
     # Data hyperparameters
     parser.add_argument('--batch_size', type=int, default=16)
     parser.add_argument('--test_batch_size', type=int, default=16)
-    parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/test10")
+    parser.add_argument("--checkpoint_dir", type=str, default="checkpoints/ft_experiments/llm_test")
 
     args = parser.parse_args()
     return args
@@ -201,7 +201,7 @@ def test_inference(args, model, test_loader, model_sql_path, model_record_path):
     all_predictions = []
     
     with torch.no_grad():
-        for encoder_input, encoder_mask, _, _, _ in tqdm(test_loader):
+        for encoder_input, encoder_mask, _ in tqdm(test_loader):
             encoder_input = encoder_input.to(DEVICE)
             encoder_mask = encoder_mask.to(DEVICE)
             
